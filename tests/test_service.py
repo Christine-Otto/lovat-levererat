@@ -212,3 +212,5 @@ def test_tillverkningsdagar_gransvarden():
     assert tillverkningsdagar(1) == 1
     assert tillverkningsdagar(50) == 1
     assert tillverkningsdagar(51) == 2
+
+import os
