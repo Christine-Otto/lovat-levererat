@@ -158,6 +158,6 @@ def leveransdatum(
     leverans = start
 
     for _ in range(dagar):
-        leverans = nasta_arbetsdag(leverans)
+        leverans = leverans + timedelta(days=1) if alternativ == "express" else nasta_arbetsdag(leverans)
 
     return leverans
