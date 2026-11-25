@@ -1,11 +1,17 @@
+# API-tester (integrationstester) för app/main.py (9 st).
+# TestClient skickar riktiga HTTP-anrop till appen, som en webbläsare gör,
+# men utan att starta någon server. Här testas det andra system ser:
+# svaret från appen och felkoderna.
 
 from fastapi.testclient import TestClient
 
 from app.main import app
 
+# En "låtsas-webbläsare" som pratar direkt med appen.
 client = TestClient(app)
 
 
+# /health ska svara 200 och {"status": "ok"}. Samma kontroll gör verify.sh.
 def test_health():
     response = client.get("/health")
 
@@ -13,6 +19,7 @@ def test_health():
     assert response.json() == {"status": "ok"}
 
 
+# /version ska svara 1.0.0. verify.sh kontrollerar också att rätt version körs.
 def test_version():
     response = client.get("/version")
 
@@ -20,6 +27,7 @@ def test_version():
     assert response.json() == {"version": "1.0.0"}
 
 
+# Ett riktigt anrop: fredag kl. 9 med express ska ge måndag 23/11 i svaret.
 def test_riktigt_anrop():
     response = client.get(
         "/leveransdatum",
@@ -39,6 +47,7 @@ def test_riktigt_anrop():
     }
 
 
+# 120 st räcker inte i lagret -> svaret ska visa produktionsorder: true.
 def test_produktionsorder_i_svaret():
     response = client.get(
         "/leveransdatum",
@@ -59,6 +68,9 @@ def test_produktionsorder_i_svaret():
     }
 
 
+# Kontraktstest: svaret ska ha exakt de här fyra fälten med rätt typ.
+# Andra system (till exempel transport) läser svaret. Döps ett fält om
+# eller ändrar typ ska testet bli rött innan det når dem.
 def test_kontrakt_svarets_falt():
     response = client.get(
         "/leveransdatum",
@@ -85,6 +97,9 @@ def test_kontrakt_svarets_falt():
     assert type(data["arbetsdagar"]) is int
 
 
+# Felaktig indata ska stoppas med felkod 422 (FastAPI validerar parametrarna).
+
+# "flyg" finns inte som alternativ (bara standard och express) -> 422.
 def test_okant_alternativ():
     response = client.get(
         "/leveransdatum",
@@ -98,6 +113,7 @@ def test_okant_alternativ():
     assert response.status_code == 422
 
 
+# "mars" finns inte som destination -> 422.
 def test_okand_destination():
     response = client.get(
         "/leveransdatum",
@@ -111,6 +127,7 @@ def test_okand_destination():
     assert response.status_code == 422
 
 
+# Antal måste vara minst 1 -> 0 ger 422.
 def test_antal_noll():
     response = client.get(
         "/leveransdatum",
@@ -124,6 +141,7 @@ def test_antal_noll():
     assert response.status_code == 422
 
 
+# Månad 13 och dag 40 finns inte -> 422.
 def test_felaktigt_datum():
     response = client.get(
         "/leveransdatum",
